@@ -57,13 +57,13 @@ RUN curl -sS https://getcomposer.org/installer \
 RUN sh $HENCE_PREFIX/install.sh && \
     s6-rmrf /etc/s6/services/s6-fdholderd/down
 
-RUN composer global require drush/drush:8.1.2 && \
+RUN echo nameserver 8.8.8.8 > /etc/resolve.conf && composer global require drush/drush:8.1.2 && \
     composer global require fillup/phpmyadmin-minimal:4.4.13.1 && \
     ln -sf $COMPOSER_HOME/vendor/bin/drush.php /usr/bin/drush && \
     curl https://drupalconsole.com/installer -L -o drupal.phar && \
     mv drupal.phar /usr/bin/drupal && \
     chmod +x /usr/bin/drupal && \
-    drupal init
+    drupal init --destination /etc/console -q
 
 EXPOSE 9000
 EXPOSE 22
