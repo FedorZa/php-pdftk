@@ -1,0 +1,35 @@
+#!/usr/bin/with-contenv sh
+
+set -e
+source $HENCE_PREFIX/hence-utils.sh
+
+set -- php-fpm -F
+
+if [ ! "$(ls -A $HENCE_APP_VOL_PREFIX/conf)" ]; then
+  generate_conf_files
+fi
+
+echo "Conf files loaded"
+
+if [ -f ./setup ]
+then
+  ./setup
+fi
+
+echo "Setup Complete"
+
+PROGRAM_OPTIONS="--php-ini=$HENCE_APP_DIR/conf/php.ini --fpm-config=$HENCE_APP_DIR/conf/php-fpm.conf $EXTRA_OPTIONS"
+set -- $@ $PROGRAM_OPTIONS
+
+chown -Rf $HENCE_APP_USER:$HENCE_APP_USER \
+  $HENCE_APP_VOL_PREFIX/conf/ \
+  /etc/newrelic/ \
+  /config/ \
+  /private/ \
+  /tmp/ \
+  $HENCE_APP_VOL_PREFIX/logs/ || true
+
+echo "Perm settings Complete"
+print_welcome_page
+
+exec "$@"

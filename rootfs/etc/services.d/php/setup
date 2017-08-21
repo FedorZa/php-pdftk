@@ -1,0 +1,199 @@
+#!/bin/bash
+
+export DOLLAR="$" # Needed to keep envsubst from destroying php env variables in conf.tmpl files
+
+# ini settings
+declare -x PHP_MEMORY_LIMIT
+declare -x PHP_POST_MAX_SIZE
+declare -x PHP_UPLOAD_MAX_FILESIZE
+declare -x PHP_MAX_EXECUTION_TIME
+declare -x PHP_MAX_INPUT_TIME
+declare -x PHP_MAX_INPUT_VARS
+declare -x PHP_DATE_TIMEZONE
+declare -x PHP_REALPATH_CACHE_SIZE
+declare -x PHP_REALPATH_CACHE_TTL
+declare -x PHP_OPCACHE_ENABLE
+declare -x PHP_OPCACHE_ENABLE_CLI
+declare -x PHP_OPCACHE_MEMORY_CONSUMPTION
+declare -x PHP_OPCACHE_INTERNAL_STRINGS_BUFFER
+declare -x PHP_OPCACHE_MAX_ACCELERATED_FILES
+declare -x PHP_OPCACHE_VALIDATE_TIMESTAMPS
+declare -x PHP_OPCACHE_REVALIDATE_FREQ
+declare -x PHP_OPCACHE_FAST_SHUTDOWN
+declare -x PHP_OPCACHE_ENABLE_FILE_OVERRIDE
+
+# fpm settings
+declare -x PHP_PM_MIN_SPARE_SERVERS
+declare -x PHP_PM_MAX_SPARE_SERVERS
+declare -x PHP_PM_MAX_CHILDREN
+declare -x PHP_PM_MAX_REQUESTS
+declare -x PHP_RLIMIT_CORE
+declare -x PHP_REQUEST_TERMINATE_TIMEOUT
+
+# newrelic settings
+declare -x NR_INSTALL_SILENT
+declare -x NR_INSTALL_KEY
+declare -x NR_APP_NAME
+
+if [ -z "${PHP_MEMORY_LIMIT}" ]
+then
+  PHP_MEMORY_LIMIT=512M
+fi
+
+if [ -z "${PHP_POST_MAX_SIZE}" ]
+then
+  PHP_POST_MAX_SIZE=128M
+fi
+
+if [ -z "${PHP_UPLOAD_MAX_FILESIZE}" ]
+then
+  PHP_UPLOAD_MAX_FILESIZE=128M
+fi
+
+if [ -z "${PHP_MAX_EXECUTION_TIME}" ]
+then
+  PHP_MAX_EXECUTION_TIME=180
+fi
+
+if [ -z "${PHP_MAX_INPUT_TIME}" ]
+then
+  PHP_MAX_INPUT_TIME=180
+fi
+
+if [ -z "${PHP_MAX_INPUT_VARS}" ]
+then
+  PHP_MAX_INPUT_VARS=1000
+fi
+
+if [ -z "${PHP_DATE_TIMEZONE}" ]
+then
+  PHP_DATE_TIMEZONE=UTC
+fi
+
+if [ -z "${PHP_REALPATH_CACHE_SIZE}" ]
+then
+  PHP_REALPATH_CACHE_SIZE=256k
+fi
+
+if [ -z "${PHP_REALPATH_CACHE_TTL}" ]
+then
+  PHP_REALPATH_CACHE_TTL=120
+fi
+
+if [ -z "${PHP_OPCACHE_ENABLE}" ]
+then
+  PHP_OPCACHE_ENABLE=1
+fi
+
+if [ -z "${PHP_OPCACHE_ENABLE_CLI}" ]
+then
+  PHP_OPCACHE_ENABLE_CLI=0
+fi
+
+if [ -z "${PHP_OPCACHE_MEMORY_CONSUMPTION}" ]
+then
+  PHP_OPCACHE_MEMORY_CONSUMPTION=128
+fi
+
+if [ -z "${PHP_OPCACHE_INTERNAL_STRINGS_BUFFER}" ]
+then
+  PHP_OPCACHE_INTERNAL_STRINGS_BUFFER=8
+fi
+
+if [ -z "${PHP_OPCACHE_MAX_ACCELERATED_FILES}" ]
+then
+  PHP_OPCACHE_MAX_ACCELERATED_FILES=4000
+fi
+
+if [ -z "${PHP_OPCACHE_VALIDATE_TIMESTAMPS}" ]
+then
+  PHP_OPCACHE_VALIDATE_TIMESTAMPS=1
+fi
+
+if [ -z "${PHP_OPCACHE_REVALIDATE_FREQ}" ]
+then
+  PHP_OPCACHE_REVALIDATE_FREQ=60
+fi
+
+if [ -z "${PHP_OPCACHE_FAST_SHUTDOWN}" ]
+then
+  PHP_OPCACHE_FAST_SHUTDOWN=1
+fi
+
+if [ -z "${PHP_OPCACHE_ENABLE_FILE_OVERRIDE}" ]
+then
+  PHP_OPCACHE_ENABLE_FILE_OVERRIDE=1
+fi
+
+if [ -z "${PHP_PM_MIN_SPARE_SERVERS}" ]
+then
+  PHP_PM_MIN_SPARE_SERVERS=8
+fi
+
+if [ -z "${PHP_PM_MAX_SPARE_SERVERS}" ]
+then
+  PHP_PM_MAX_SPARE_SERVERS=16
+fi
+
+if [ -z "${PHP_PM_MAX_CHILDREN}" ]
+then
+  PHP_PM_MAX_CHILDREN=16
+fi
+
+if [ -z "${PHP_PM_MAX_REQUESTS}" ]
+then
+  PHP_PM_MAX_REQUESTS=1500
+fi
+
+if [ -z "${PHP_RLIMIT_CORE}" ]
+then
+  PHP_RLIMIT_CORE=65536
+fi
+
+if [ -z "${PHP_REQUEST_TERMINATE_TIMEOUT}" ]
+then
+  PHP_REQUEST_TERMINATE_TIMEOUT=300
+fi
+
+if [ -z "${NR_INSTALL_SILENT}" ]
+then
+  NR_INSTALL_SILENT=false
+fi
+
+if [ -z "${NR_INSTALL_KEY}" ]
+then
+  NR_INSTALL_KEY=""
+fi
+
+if [ -z "${NR_APP_NAME}" ]
+then
+  NR_APP_NAME="PHP Application"
+fi
+
+# If PHPMYADMIN_MYSQL_HOST is provided, then we set up phpmyadmin
+if [ -n "${PHPMYADMIN_MYSQL_HOST}" ]
+then
+  rm -rf /vendor/phpmyadmin && cp -R $COMPOSER_HOME/vendor/fillup/phpmyadmin-minimal /vendor/phpmyadmin
+  sed -i "s/getenv('MYSQL_HOST') ?: 'localhost'/'${PHPMYADMIN_MYSQL_HOST}'/" /vendor/phpmyadmin/config.inc.php
+  rm -f /app/phpmyadmin && ln -sf /vendor/phpmyadmin /app/phpmyadmin
+fi
+
+# Install newrelic PHP agent if install key is present and it's not already installed
+if [ ! -f /etc/newrelic/newrelic.installed  -a -n "${NR_INSTALL_KEY}" ]
+then
+  NR_INSTALL_SILENT=true
+
+  /etc/newrelic/newrelic-install install
+
+  touch /etc/newrelic/newrelic.installed
+
+  if [ -n "${NR_APP_NAME}" ]
+  then
+    sed -i -e "s/PHP\ Application/${NR_APP_NAME}/g" /etc/php/conf.d/newrelic.ini
+  fi
+fi
+
+
+envsubst < $HENCE_APP_VOL_PREFIX/conf/pool.d/www.conf.tmpl > $HENCE_APP_VOL_PREFIX/conf/pool.d/www.conf
+
+envsubst < $HENCE_APP_VOL_PREFIX/conf/php.ini.tmpl > $HENCE_APP_VOL_PREFIX/conf/php.ini
