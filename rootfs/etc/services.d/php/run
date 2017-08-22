@@ -3,7 +3,7 @@
 set -e
 source $HENCE_PREFIX/hence-utils.sh
 
-set -- php-fpm -F
+set -- php-fpm5 -F
 
 if [ ! "$(ls -A $HENCE_APP_VOL_PREFIX/conf)" ]; then
   generate_conf_files
@@ -31,5 +31,4 @@ chown -Rf $HENCE_APP_USER:$HENCE_APP_USER \
 
 echo "Perm settings Complete"
 print_welcome_page
-
 exec "$@"

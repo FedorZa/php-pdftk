@@ -1,7 +1,7 @@
-FROM fedorza/alpine_36
+FROM fedorza/alpine_36_onb
 MAINTAINER Clint Beacock <clint@therefore.ca>/Fedor Zakharov <fedor@therefore.ca>
 
-ENV HENCE_APP_DIR=$HENCE_PREFIX/php \
+ENV HENCE_APP_DIR=$HENCE_PREFIX/php5 \
     HENCE_APP_NAME=php \
     HENCE_APP_USER=hence \
     HENCE_APP_VERSION=3.6
@@ -46,8 +46,7 @@ RUN apk --update add \
 #    build-base  \
     mariadb-common \
     mariadb-client && \
-    rm -rf /var/cache/apk/* && \
-    rm -rf /etc/php/*
+    rm -rf /var/cache/apk/*
 
 COPY rootfs /
 
@@ -68,6 +67,6 @@ RUN echo nameserver 8.8.8.8 > /etc/resolve.conf && composer global require drush
 EXPOSE 9000
 EXPOSE 22
 
-VOLUME ["/etc/php/custom.d", "/app", "$HENCE_APP_VOL_PREFIX/conf", "$HENCE_APP_VOL_PREFIX/logs/php-general-logs", "$HENCE_APP_VOL_PREFIX/logs/php-error-logs","/vendor", "/config"]
+VOLUME ["/etc/php5/custom.d", "/app", "$HENCE_APP_VOL_PREFIX/conf", "$HENCE_APP_VOL_PREFIX/logs/php-general-logs", "$HENCE_APP_VOL_PREFIX/logs/php-error-logs","/vendor", "/config"]
 
 WORKDIR /app

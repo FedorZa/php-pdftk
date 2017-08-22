@@ -189,7 +189,7 @@ then
 
   if [ -n "${NR_APP_NAME}" ]
   then
-    sed -i -e "s/PHP\ Application/${NR_APP_NAME}/g" /etc/php/conf.d/newrelic.ini
+    sed -i -e "s/PHP\ Application/${NR_APP_NAME}/g" /etc/php5/conf.d/newrelic.ini
   fi
 fi
 

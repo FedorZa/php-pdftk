@@ -15,7 +15,7 @@ RUN apk --update add \
     curl https://drupalconsole.com/installer -L -o drupal.phar && \
     mv drupal.phar /usr/bin/drupal && \
     chmod +x /usr/bin/drupal && \
-    drupal init
+    drupal init -q
 
 EXPOSE 22
 
